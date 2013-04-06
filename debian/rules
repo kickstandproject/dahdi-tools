@@ -23,13 +23,14 @@ PACKAGE:=$(PREFIX)
 PACKAGE_SRC:=$(PREFIX)-tools
 # modifieable for experiments or debugging m-a
 
-DEBVERSION:=$(shell head -n 1 debian/changelog \
-		    | sed -e 's/^[^(]*(\([^)]*\)).*/\1/')
-DEB_BASE_VERSION:=$(shell echo $(DEBVERSION) | sed -e 's/^.*://' -e 's/-[0-9.]*$$//')
-UPVERSION:=$(shell echo $(DEB_BASE_VERSION) | sed -e 's/~dfsg\(~\|$$\)/\1/' -e 's/~\(rc\|beta\)/-\1/')
+
+DEBVERSION:=$(shell dpkg-parsechangelog | sed -n -e 's/Version: //p')
+DEB_NOEPOCH_VERSION:=$(shell echo $(DEBVERSION) | cut -d':' -f 2)
+DEB_SRC_VERSION:=$(shell echo $(DEB_NOEPOCH_VERSION) | sed -e 's/-[^-]\+$$//')
+UPVERSION:=$(shell echo $(DEB_SRC_VERSION) | sed -e 's/[~+]dfsg\(~\|$$\)/\1/' -e 's/~\(rc\|beta\)/-\1/')
 
 UPFILENAME := $(PACKAGE_SRC)_$(UPVERSION).orig.tar.gz
-FILENAME := $(PACKAGE_SRC)_$(DEB_BASE_VERSION).orig.tar.gz
+FILENAME := $(PACKAGE_SRC)_$(DEB_SRC_VERSION).orig.tar.gz
 URL := http://downloads.asterisk.org/pub/telephony/$(PACKAGE_SRC)/releases/$(PACKAGE_SRC)-$(UPVERSION).tar.gz
 
 build: patch build-stamp
@@ -128,6 +129,9 @@ binary-arch: build install-arch
 print-version:
 	@@echo "Debian version:          $(DEBVERSION)"
 	@@echo "Upstream version:        $(UPVERSION)"
+
+print-filename:
+	@@echo "Filename:                $(FILENAME)"
 
 TARBALL_DIR=../tarballs/zaptel-$(UPVERSION).tmp
 get-orig-source:
